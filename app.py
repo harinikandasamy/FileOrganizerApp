@@ -1,8 +1,8 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 from pathlib import Path
 import os
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=".")
 
 file_formats = {
     "Images": [".jpeg", ".jpg", ".gif", ".png"],
@@ -11,25 +11,23 @@ file_formats = {
     "Others": []
 }
 
-
 def organize_files(source_folder, target_folder):
-        for entry in os.scandir(source_folder):
-            if entry.is_file():
-                file_path = Path(entry)
-                file_extension = file_path.suffix.lower()
+    for entry in os.scandir(source_folder):
+        if entry.is_file():
+            file_path = Path(entry)
+            file_extension = file_path.suffix.lower()
 
-                target_dir = target_folder / "Others"
-                for category, extensions in file_formats.items():
-                    if file_extension in extensions:
-                        target_dir = target_folder / category
-                        break
+            target_dir = target_folder / "Others"
+            for category, extensions in file_formats.items():
+                if file_extension in extensions:
+                    target_dir = target_folder / category
+                    break
 
-                target_dir.mkdir(parents=True, exist_ok=True)
-                target_file_path = target_dir / file_path.name
+            target_dir.mkdir(parents=True, exist_ok=True)
+            target_file_path = target_dir / file_path.name
 
-                os.rename(file_path, target_file_path)
-                print(f"Moved '{file_path}' to '{target_file_path}'")
-
+            os.rename(file_path, target_file_path)
+            print(f"Moved '{file_path}' to '{target_file_path}'")
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -38,6 +36,9 @@ def index():
         target_folder = Path(request.form["target_folder"])
 
         organize_files(source_folder, target_folder)
+
+        # Redirect to the home page after organizing files
+        return redirect(url_for('index'))
 
     return render_template("index.html")
 
